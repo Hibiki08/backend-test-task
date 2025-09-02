@@ -1,19 +1,14 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Raketa\BackendTestTask\View;
 
 use Raketa\BackendTestTask\Domain\Cart;
-use Raketa\BackendTestTask\Repository\ProductRepository;
+use Raketa\BackendTestTask\Domain\CartItem;
 
 readonly class CartView
 {
-    public function __construct(
-        private ProductRepository $productRepository
-    ) {
-    }
-
     public function toArray(Cart $cart): array
     {
         $data = [
@@ -32,14 +27,15 @@ readonly class CartView
 
         $total = 0;
         $data['items'] = [];
+        /** @var CartItem $item */
         foreach ($cart->getItems() as $item) {
-            $total += $item->getPrice() * $item->getQuantity();
-            $product = $this->productRepository->getByUuid($item->getProductUuid());
+            $product = $item->getProduct();
+            $total += $item->getPrice();
 
             $data['items'][] = [
                 'uuid' => $item->getUuid(),
-                'price' => $item->getPrice(),
-                'total' => $total,
+                'price' => $product->getPrice(),
+                'total' => $item->getPrice(),
                 'quantity' => $item->getQuantity(),
                 'product' => [
                     'id' => $product->getId(),

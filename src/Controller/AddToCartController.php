@@ -4,7 +4,9 @@ namespace Raketa\BackendTestTask\Controller;
 
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Raketa\BackendTestTask\Domain\Cart;
 use Raketa\BackendTestTask\Domain\CartItem;
+use Raketa\BackendTestTask\Domain\Customer;
 use Raketa\BackendTestTask\Repository\CartManager;
 use Raketa\BackendTestTask\Repository\ProductRepository;
 use Raketa\BackendTestTask\View\CartView;
@@ -24,13 +26,20 @@ readonly class AddToCartController
         $rawRequest = json_decode($request->getBody()->getContents(), true);
         $product = $this->productRepository->getByUuid($rawRequest['productUuid']);
 
-        $cart = $this->cartManager->getCart();
+        $cart = $this->cartManager->getCart(session_id());
+        if (!$cart) {
+            // Если корзины нет, создаем новую. Юзера берем из базы или сессии.
+            $customer = new Customer(1, 'Freddie', 'Freddie Mercury', '', 'freddie.mercury@test.com');
+            $cart = new Cart(Uuid::uuid4()->toString(), $customer, 'credit_card', []);
+        }
+
         $cart->addItem(new CartItem(
             Uuid::uuid4()->toString(),
-            $product->getUuid(),
-            $product->getPrice(),
+            $product,
             $rawRequest['quantity'],
         ));
+
+        $this->cartManager->saveCart(session_id(), $cart);
 
         $response = new JsonResponse();
         $response->getBody()->write(

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Raketa\BackendTestTask\Domain;
 
@@ -36,6 +36,13 @@ final class Cart
 
     public function addItem(CartItem $item): void
     {
+        foreach ($this->items as $key => $existingItem) {
+            if ($existingItem->getProductUuid() === $item->getProductUuid()) {
+                $this->items[$key] = $existingItem->addQuantity($item->getQuantity());
+                return;
+            }
+        }
+
         $this->items[] = $item;
     }
 }

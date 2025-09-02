@@ -1,52 +1,40 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Raketa\BackendTestTask\Repository;
 
 use Exception;
 use Psr\Log\LoggerInterface;
 use Raketa\BackendTestTask\Domain\Cart;
-use Raketa\BackendTestTask\Infrastructure\ConnectorFacade;
+use Raketa\BackendTestTask\Infrastructure\Connector;
 
-class CartManager extends ConnectorFacade
+class CartManager
 {
-    public $logger;
+    private const CART_TTL = 24 * 60 * 60;
 
-    public function __construct($host, $port, $password)
-    {
-        parent::__construct($host, $port, $password, 1);
-        parent::build();
-    }
+    public function __construct(
+        private readonly Connector $connector,
+        private readonly LoggerInterface $logger,
+    ) {}
 
-    public function setLogger(LoggerInterface $logger)
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function saveCart(Cart $cart)
+    public function saveCart(string $sessionId, Cart $cart): void
     {
         try {
-            $this->connector->set($cart, session_id());
+            $this->connector->set($sessionId, $cart, self::CART_TTL);
         } catch (Exception $e) {
-            $this->logger->error('Error');
+            $this->logger->error('Error saving cart', ['exception' => $e]);
         }
     }
 
-    /**
-     * @return ?Cart
-     */
-    public function getCart()
+    public function getCart(string $sessionId): ?Cart
     {
         try {
-            return $this->connector->get(session_id());
+            return $this->connector->get($sessionId);
         } catch (Exception $e) {
-            $this->logger->error('Error');
+            $this->logger->error('Error getting cart', ['exception' => $e]);
         }
 
-        return new Cart(session_id(), []);
+        return null;
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace Raketa\BackendTestTask\Controller;
 
@@ -19,31 +19,27 @@ readonly class GetCartController
 
     public function get(RequestInterface $request): ResponseInterface
     {
+        $cart = $this->cartManager->getCart(session_id());
+
+        if (!$cart) {
+            return $this->createResponse(['message' => 'Cart not found'], 404);
+        } 
+
+        return $this->createResponse($this->cartView->toArray($cart));
+    }
+
+    private function createResponse(array $data, int $status = 200): ResponseInterface
+    {
         $response = new JsonResponse();
-        $cart = $this->cartManager->getCart();
-
-        if (! $cart) {
-            $response->getBody()->write(
-                json_encode(
-                    ['message' => 'Cart not found'],
-                    JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
-                )
-            );
-
-            return $response
-                ->withHeader('Content-Type', 'application/json; charset=utf-8')
-                ->withStatus(404);
-        } else {
-            $response->getBody()->write(
-                json_encode(
-                    $this->cartView->toArray($cart),
-                    JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
-                )
-            );
-        }
+        $response->getBody()->write(
+            json_encode(
+                $data,
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+            )
+        );
 
         return $response
             ->withHeader('Content-Type', 'application/json; charset=utf-8')
-            ->withStatus(404);
+            ->withStatus($status);
     }
 }
